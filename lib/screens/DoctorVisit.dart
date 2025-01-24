@@ -1,9 +1,15 @@
+import 'package:alz/models/usermodel.dart';
+import 'package:alz/providers/UserProvider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:provider/provider.dart';
 
 class DoctorVisitPage extends StatefulWidget {
-  const DoctorVisitPage({super.key});
+ // Pass the user ID to this page
+
+  const DoctorVisitPage({super.key, });
 
   @override
   State<DoctorVisitPage> createState() => _DoctorVisitPageState();
@@ -17,20 +23,7 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
-  final List<String> dementiaConditions = [
-    'Alzheimer\'s Disease',
-    'Vascular Dementia',
-    'Lewy Body Dementia',
-    'Frontotemporal Dementia',
-    'Mixed Dementia',
-    'Parkinson\'s Disease Dementia',
-    'Creutzfeldt-Jakob Disease',
-    'Normal Pressure Hydrocephalus',
-    'Huntington\'s Disease',
-    'Wernicke-Korsakoff Syndrome'
-  ];
-
-  void _selectDate(BuildContext context) async {
+  Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -44,7 +37,7 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
     }
   }
 
-  void _selectTime(BuildContext context) async {
+  Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
@@ -56,8 +49,12 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
     }
   }
 
-  Future<void> scheduleVisit() async {
-    if (_selectedDate == null || _selectedTime == null ||_doctorName.text.isEmpty) {
+  Future<void> _logVisitDetails(String userId) async {
+    if (_selectedDate == null ||
+        _selectedTime == null ||
+        _doctorName.text.isEmpty ||
+        _doctorSpeciality.text.isEmpty ||
+        _doctorAddress.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
@@ -73,25 +70,63 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
       _selectedTime!.minute,
     );
 
-    // Schedule the notification
-    AwesomeNotifications().createNotification(
-      content: NotificationContent(
-        id: 1,
-        channelKey: 'scheduled_channel',
-        title: 'Doctor Visit Reminder',
-        body: 'You have a visit scheduled with Dr. ${_doctorName.text}.',
-        notificationLayout: NotificationLayout.Default,
-      ),
-      schedule: NotificationCalendar.fromDate(date: visitDateTime),
-    );
+    // Create the visit data
+    final visitData = {
+      'doctorName': _doctorName.text,
+      'doctorSpeciality': _doctorSpeciality.text,
+      'doctorAddress': _doctorAddress.text,
+      'visitDateTime': visitDateTime.toIso8601String(),
+      'timestamp': FieldValue.serverTimestamp(),
+    };
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Visit scheduled for ${DateFormat('dd MMMM yyyy hh:mm a').format(visitDateTime)}')),
-    );
+    try {
+      // Save to Firestore under the user's docvisits collection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('docvisits')
+          .add(visitData);
+
+      // Schedule the notification
+      AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          channelKey: 'scheduled_channel',
+          title: 'Doctor Visit Reminder',
+          body: 'You have a visit scheduled with Dr. ${_doctorName.text}.',
+          notificationLayout: NotificationLayout.Default,
+        ),
+        schedule: NotificationCalendar.fromDate(date: visitDateTime,preciseAlarm: true),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Visit logged and scheduled for ${DateFormat('dd MMMM yyyy hh:mm a').format(visitDateTime)}',
+          ),
+        ),
+      );
+      Navigator.of(context).pop(true);  // Passing true to indicate an update
+
+
+      // Clear the fields after successful submission
+      _doctorName.clear();
+      _doctorSpeciality.clear();
+      _doctorAddress.clear();
+      setState(() {
+        _selectedDate = null;
+        _selectedTime = null;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to log visit: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    String userId=Provider.of<UserProvider>(context).userModel!.id;
     return Scaffold(
       appBar: AppBar(
         title: Text('Log a Visit'),
@@ -176,7 +211,7 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
 
               ElevatedButton(
                 onPressed: (){
-                  scheduleVisit();
+                  _logVisitDetails(userId);
                 },
                 child: Text('Schedule Visit'),
               ),

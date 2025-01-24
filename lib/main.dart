@@ -92,7 +92,23 @@ void main() async{
   playSound: true,
   // Custom sound will be defined per notification
   importance: NotificationImportance.High,
-  )
+  ),
+          NotificationChannel(
+            channelKey: 'scheduled_channel',
+            channelName: 'high_frequency',
+            channelDescription: 'Notifications with custom sounds',
+            playSound: true,
+            // Custom sound will be defined per notification
+            importance: NotificationImportance.High,
+          ),
+          NotificationChannel(
+            channelKey: 'low_frequency',
+            channelName: 'Doctor Visit Notif',
+            channelDescription: 'Notifications with custom sounds',
+            playSound: true,
+            // Custom sound will be defined per notification
+            importance: NotificationImportance.High,
+          )
         ],
       );
     AwesomeNotifications().isNotificationAllowed().then((isAllowed) {

@@ -2,12 +2,14 @@ import 'package:alz/models/usermodel.dart';
 import 'package:alz/providers/UserProvider.dart';
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
+import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import '../games/firstGame.dart';
 import '../games/secondGame.dart';
 import '../games/thirdGame.dart';
 import 'PersonalInfo.dart';
+import 'ShowContacts.dart';
 
 
 
@@ -64,7 +66,7 @@ class _EssentialScreenState extends State<EssentialScreen> {
                         ),
                         Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('23 Jan,2021',
+                          child: Text(DateFormat('dd MMMM yyyy').format(DateTime.now()),
                               style: TextStyle(color: Colors.white)),
                         )
                       ],
@@ -163,44 +165,13 @@ class _EssentialScreenState extends State<EssentialScreen> {
             //search bar
 
             //How do you feel
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          'How do you feel?',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Icon(
-                        Icons.more_horiz,
-                        color: Colors.white,
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 25,
-                  ),
-                  //4 different faces
 
-                ],
-              ),
-            ),
-
-            SizedBox(
-              height: 24,
-            ),
             Personal_Info(),
-            buildUserEvents(size),
-
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text('Relatives',style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: Colors.white),),
+            ),
+            ImageListPage()
           ],
         ),
       ),
@@ -311,19 +282,25 @@ class _EssentialScreenState extends State<EssentialScreen> {
   }
 
   void _navigateToPage(int index) {
-    // switch (index) {
-    //   case 1:
-    //     Navigator.push(
-    //       context,
-    //       MaterialPageRoute(builder: (context) => ContactList()),
-    //     );
-    //     break;
+    switch (index) {
+      case 0:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => Scaffold()),
+        );
+         break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => Scaffold()),
+        );
+        break;
     //   case 2:
     //     Navigator.push(
     //       context,
     //       MaterialPageRoute(builder: (context) => ImageRecognizer()),
     //     );
     //     break;
-    // }
+    }
   }
 }
