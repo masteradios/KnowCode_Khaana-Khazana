@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "395568644967",
+    "project_id": "alzheimer-ada7f",
+    "storage_bucket": "alzheimer-ada7f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395568644967:android:01dc9587d776bad88b65c2",
+        "android_client_info": {
+          "package_name": "com.example.alz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL4Ai_sGopnbzW2hOxN_Y2i9T1eEJJ6gU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
