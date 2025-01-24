@@ -1,6 +1,10 @@
 import 'package:alz/helper/services/auth.dart';
+import 'package:alz/models/usermodel.dart';
+import 'package:alz/providers/UserProvider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../helper/diseases.dart';
 
@@ -10,8 +14,6 @@ class PatientProfilePage extends StatefulWidget {
 }
 
 class _PatientProfilePageState extends State<PatientProfilePage> {
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _relationshipController = TextEditingController();
   String? _selectedCondition;
 
@@ -43,19 +45,23 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
     'Wernicke-Korsakoff Syndrome'
   ];
 
-  void submit(){
-    FirebaseServices().signUpUser(email: 'abc@gmail.com', password: '123456');
+  void submit()async{
+    await FirebaseServices().setPatientProfileDetails(context: context, relationship: _relationshipController.text.trim(), dateOfBirth: _selectedDate!, diseaseDiagnosed: _selectedCondition!.trim());
+    //FirebaseServices().signUpUser(email: 'abc@gmail.com', password: '123456');
   }
+
+
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    submit();
+
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Patient Profile'),
@@ -68,25 +74,6 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
 
-              Text('First Name',style: TextStyle(fontSize: 18),),
-              TextField(
-                controller: _firstNameController,
-                decoration: InputDecoration(
-
-                  hintText: 'Enter first name',
-                ),
-              ),
-              SizedBox(height: 16),
-
-              Text('Last Name',style: TextStyle(fontSize: 18),),
-              TextField(
-                controller: _lastNameController,
-                decoration: InputDecoration(
-
-                  hintText: 'Enter last name',
-                ),
-              ),
-              SizedBox(height: 16),
 
               Text('Relationship to the Caretaker',style: TextStyle(fontSize: 18),),
               TextField(
@@ -113,7 +100,7 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                       Text(
                         _selectedDate == null
                             ? 'Select Date of Birth'
-                            : DateFormat('MMMM yyyy').format(_selectedDate!),
+                            : DateFormat('dd MMMM yyyy').format(_selectedDate!),
                         style: TextStyle(fontSize: 16),
                       ),
                       Icon(Icons.calendar_month)
@@ -144,6 +131,11 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
                 ),
               ),
               SizedBox(height: 16),
+              ElevatedButton(onPressed: (){
+
+                submit();
+
+              }, child: Text('Submit'))
             ],
           ),
         ),

@@ -1,19 +1,25 @@
 import 'package:alz/AddLocation.dart';
 import 'package:alz/AddReminder.dart';
 import 'package:alz/ShakeDetector.dart';
+import 'package:alz/helper/services/auth.dart';
 import 'package:alz/screens/PatientProfileScreen.dart';
+import 'package:alz/screens/signUpScreen.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:sms_advanced/sms_advanced.dart';
 import 'package:workmanager/workmanager.dart';
 import 'helper/diseases.dart';
 import 'helper/helperFunctions.dart';
+import 'providers/UserProvider.dart';
 import 'screens/AlarmScreen.dart';
+import 'screens/DeepFace.dart';
 import 'screens/DoctorVisit.dart';
 void playAudioAlarm() async {
   final dir = await getApplicationDocumentsDirectory();
@@ -89,9 +95,7 @@ void main() async{
         AwesomeNotifications().requestPermissionToSendNotifications();
       }
     });
-    FirebaseApp app = await Firebase.initializeApp(
-
-    );
+    FirebaseApp app = await Firebase.initializeApp();
     print('Initialized default app $app');
 
     runApp(const MyApp() );
@@ -106,40 +110,80 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        fontFamily: 'Montserrat',
-        textSelectionTheme:
-        const TextSelectionThemeData(cursorColor: Colors.black),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15)),
-                foregroundColor: Colors.white,
-                backgroundColor: const Color(0XFF343a40))),
-        inputDecorationTheme: InputDecorationTheme(
-          outlineBorder: BorderSide(color: Colors.black),
-          labelStyle: const TextStyle(color: Colors.black54),
-          hintStyle: const TextStyle(color: Colors.black54),
-          contentPadding:
-          const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.black26)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.black26)),
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.black26)),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          fontFamily: 'Montserrat',
+          textSelectionTheme:
+          const TextSelectionThemeData(cursorColor: Colors.black),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                  foregroundColor: Colors.white,
+                  backgroundColor:  Colors.deepPurpleAccent,)),
+          inputDecorationTheme: InputDecorationTheme(
+            outlineBorder: BorderSide(color: Colors.black),
+            labelStyle: const TextStyle(color: Colors.black54),
+            hintStyle: const TextStyle(color: Colors.black54),
+            contentPadding:
+            const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Colors.black26)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Colors.black26)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide(color: Colors.black26)),
+          ),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
         ),
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        home:  StreamBuilder(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            print('Connection State: ${snapshot.connectionState}');
+            print('Snapshot Data: ${snapshot.data}');
+            print('Snapshot Error: ${snapshot.error}');
+
+            if (snapshot.connectionState == ConnectionState.active) {
+              if (snapshot.hasData) {
+                final User? firebaseUser = snapshot.data;
+                print('User Logged In: ${firebaseUser?.uid}');
+                if (firebaseUser != null) {
+                  FirebaseServices().setUserModel(context, firebaseUser.uid);
+                }
+                return FaceCheckPage();
+              } else if (snapshot.hasError) {
+                return Scaffold(
+                  body: Center(
+                    child: Text('${snapshot.error}'),
+                  ),
+                );
+              }
+            }
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            print('Showing SignUpScreen');
+            return SignUpScreen();
+          },
+
+        ),
+
       ),
-      home:  PatientProfilePage(),
     );
   }
 }

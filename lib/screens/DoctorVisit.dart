@@ -14,7 +14,6 @@ class _DoctorVisitPageState extends State<DoctorVisitPage> {
   final TextEditingController _doctorSpeciality = TextEditingController();
   final TextEditingController _doctorAddress = TextEditingController();
 
-  String? _selectedCondition;
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
