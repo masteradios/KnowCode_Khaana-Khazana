@@ -37,9 +37,7 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <meta-data
-                android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyDdRJkfyUxkJ-R2Ar3af254AmHX0iD9Cy4"/>
+
             <meta-data
                 android:name="com.google.android.wearable.standalone"
                 android:value="true"
@@ -54,7 +52,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDdRJkfyUxkJ-R2Ar3af254AmHX0iD9Cy4"/>
         <service
             android:name="dev.fluttercommunity.plus.androidalarmmanager.AlarmService"
             android:permission="android.permission.BIND_JOB_SERVICE"

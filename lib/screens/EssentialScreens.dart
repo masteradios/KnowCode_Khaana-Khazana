@@ -1,6 +1,13 @@
+import 'dart:convert';
+
 import 'package:alz/models/usermodel.dart';
 import 'package:alz/providers/UserProvider.dart';
+import 'package:alz/screens/GoogleMaps.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -18,15 +25,136 @@ class EssentialScreen extends StatefulWidget {
   static const routeName = '/essential';
   const EssentialScreen({super.key});
 
+
   @override
   State<EssentialScreen> createState() => _EssentialScreenState();
 }
 
 class _EssentialScreenState extends State<EssentialScreen> {
+  String locationMessage="";
+  double? _currentLat;
+  double? _currentLng;
+  bool _isFetchingLocation = false;
+  Future<void> _fetchCurrentLocation() async {
+    setState(() {
+      _isFetchingLocation = true;
+    });
+
+    // Request location permission
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Location services are disabled.")),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Location permission is denied.")),
+        );
+        setState(() {
+          _isFetchingLocation = false;
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Location permissions are permanently denied."),
+        ),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+      return;
+    }
+
+    // Fetch current position
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+      setState(() {
+        _currentLat = position.latitude;
+        _currentLng = position.longitude;
+
+      });
+
+      http.Response res = await http.post(
+        Uri.parse('https://f752-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/locate'),
+        body: jsonEncode({
+          "long": _currentLng.toString(),
+          "lat": _currentLat.toString(),
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (res.statusCode==200){
+
+        setState(() {
+          locationMessage=json.decode(res.body)["location"];
+          _isFetchingLocation = false;
+        });
+      }
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to fetch location: $e")),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+    }
+  }
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Get the user's current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Use the Geocoding package to get address from coordinates
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        setState(() {
+          locationMessage = "${place.subLocality}, ${place.administrativeArea}";
+        });
+      } else {
+        setState(() {
+          locationMessage = "Location not found.";
+        });
+      }
+    } catch (e) {
+      print("error :"+e.toString());
+      setState(() {
+        locationMessage = "Error fetching location: $e";
+      });
+    }
+  }
 
 
-
-
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _fetchCurrentLocation();
+  }
 
   bool isLoading = false;
 
@@ -52,7 +180,7 @@ class _EssentialScreenState extends State<EssentialScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0,vertical: 3),
                           child: Text(
                             'Hi, ${user.name}!',
                             style: TextStyle(
@@ -72,22 +200,7 @@ class _EssentialScreenState extends State<EssentialScreen> {
                       ],
                     ),
                     //notification
-                    Tooltip(
-                      message: 'Share your location',
-                      child: TextButton(
-                        onPressed: () {
-                        },
-                        child: Container(
-                            decoration: BoxDecoration(
-                                color: Colors.deepPurple[600],
-                                borderRadius: BorderRadius.circular(12)),
-                            padding: EdgeInsets.all(12),
-                            child: Icon(
-                              Iconsax.gps,
-                              color: Colors.white,
-                            )),
-                      ),
-                    )
+
                   ],
                 ),
                 Container(
@@ -167,6 +280,73 @@ class _EssentialScreenState extends State<EssentialScreen> {
             //How do you feel
 
             Personal_Info(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text('Your Current Location',style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: Colors.white),),
+            ),
+            Flexible(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                    color: Colors.deepPurple[400],
+                    borderRadius: BorderRadius.circular(30)),
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            margin: EdgeInsets.all(8),
+                            height: 70,
+                            width: 70,
+                            child: Image.network(
+                              "https://montsame.mn/files/66739787d0724.jpeg",
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Flexible(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                (_isFetchingLocation)
+                                    ? Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(color: Colors.white),
+                                    )
+                                    : Text(
+                                  locationMessage,
+                                  style: TextStyle(color: Colors.white),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1, // Ensures it stays in a single line
+                                ),
+                                ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                                    ),
+                                    onPressed: (){
+                                      Navigator.push(context, MaterialPageRoute(builder: (context){
+                                        return GoogleMapPage(destinationLocation: LatLng(user.homeLat, user.homeLong), sourceLocation: LatLng(_currentLat!, _currentLng!));
+                                      }));
+                                }, child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Text("Your Home"),
+                                )),
+                              ],
+                            ),
+                          ),
+
+                        ],
+                      ),
+                    ),
+
+                  ],
+                ),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text('Relatives',style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: Colors.white),),

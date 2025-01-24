@@ -94,7 +94,7 @@ void main() async{
   importance: NotificationImportance.High,
   ),
           NotificationChannel(
-            channelKey: 'scheduled_channel',
+            channelKey: 'high_frequency',
             channelName: 'high_frequency',
             channelDescription: 'Notifications with custom sounds',
             playSound: true,
@@ -168,6 +168,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
+
         home:  StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {

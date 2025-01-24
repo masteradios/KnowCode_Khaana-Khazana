@@ -190,7 +190,7 @@ class _NotesScreenState extends State<NotesScreen> {
             ),
           );
         },
-      ),
+      ),floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

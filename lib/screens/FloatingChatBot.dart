@@ -1,51 +1,40 @@
-import 'dart:async';
+import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:alz/screens/EssentialScreens.dart';
-import 'package:alz/screens/signUpScreen.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:iconsax/iconsax.dart';
-import 'package:workmanager/workmanager.dart';
 
-import '../ShakeDetector.dart';
 import '../games/firstGame.dart';
 import '../games/secondGame.dart';
 import '../games/thirdGame.dart';
-import '../helper/diseases.dart';
-import '../helper/helperFunctions.dart';
-import '../pages.dart';
-import 'FloatingChatBot.dart';
 
 
-class HomeScreen extends StatefulWidget {
-  static const routeName = '/home';
-  const HomeScreen({Key? key}) : super(key: key);
+class FloatingChat extends StatefulWidget {
+  final Widget child;
+
+  const FloatingChat({Key? key, required this.child}) : super(key: key);
+
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _FloatingChatState createState() => _FloatingChatState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  //final ReminderService _reminderService = ReminderService();
-  bool isLoading = false;
-  double homeLat = 0;
-  double homeLong = 0;
-  bool _isNotificationSent = false;
-  bool _isMounted = false;
+class _FloatingChatState extends State<FloatingChat> {
   final List<Map<String, String>> _messages = [];
   final TextEditingController _controller = TextEditingController();
   bool _isChatVisible = false;
   Offset _offset = const Offset(50, 400);
-  double _chatBottomPosition = 130;
+  double _chatBottomPosition = 20;
 
   late stt.SpeechToText _speech; // Speech-to-text instance
   bool _isListening = false; // Track listening state
   String _spokenText = ''; // Hold recognized text
   final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+  }
 
 
   Future<String> getBotResponse(String query) async {
@@ -137,65 +126,40 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-  @override
-  void initState() {
-    super.initState();
-    _isMounted = true;
-    scheduleNotifications();
-    Workmanager().registerPeriodicTask('appReminder', 'showAppReminder',frequency: Duration(minutes: 30));
-    ShakeDetector shakeDetector=ShakeDetector.autoStart(onPhoneShake: (){
-      showNotification("SOS Sent !!", "Your contacts have been informed!");
-
-    });
-  }
-  void scheduleNotifications() {
-    int? severity = dementiaConditions['sda'];
-    dementiaConditions.forEach((condition, severity) {
-      String channelKey =
-      severity >= 8 ? 'high_frequency' : 'low_frequency'; // Frequency logic
-
-      // Notification Content
-      String message = severity >= 8
-          ? "Reminder: Use SOS and Face Recognition for emergencies."
-          : "Stay safe! Use SOS and YOLO when needed.";
-
-      int frequencyMinutes = severity >= 8 ? 10 : 30;
-
-      AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: severity,
-          channelKey: channelKey,
-          title: "Stay Prepared: Important Features for $condition",
-          body: message,
-          notificationLayout: NotificationLayout.Default,
-        ),
-        schedule: NotificationInterval(
-          interval: Duration(minutes: frequencyMinutes),// Convert minutes to seconds
-          timeZone: DateTime.now().timeZoneName,
-          preciseAlarm: true,
-        ),
-      );
-    });
-  }
-
 
   @override
-  void dispose() {
-    _isMounted = false;
-    super.dispose();
+  Widget build(BuildContext context) {
+
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Stack(
+      children: [
+        widget.child,
+        // Floating Action Button
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: FloatingActionButton(
+            onPressed: () {
+              setState(() {
+                _isChatVisible = !_isChatVisible;
+              });
+            },
+            child: const Icon(Icons.chat),
+          ),
+        ),
+
+        if (_isChatVisible)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            bottom: bottomInset > 0 ? bottomInset : _chatBottomPosition,
+            right: 20,
+            child: _buildChatWindow(),
+          ),
+      ],
+    );
   }
 
-  void signOut() async {
-    await FirebaseAuth.instance.signOut();
-
-    // Navigate to the login page after signing out
-    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (context){
-      return SignUpScreen();
-    }), (route) => false);
-  }
-
-
-  int selectedIndex = 0;
   Widget _buildChatWindow() {
     return Material(
       elevation: 8,
@@ -292,110 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
-  @override
-  Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom-100;
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(onPressed: (){
-        setState(() {
-          _isChatVisible = !_isChatVisible;
-        });
-      },child: Icon(Iconsax.message),),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-              onPressed: () {
-                signOut();
-              },
-              icon: Icon(
-                Iconsax.logout,
-                color: Colors.white,
-              ))
-        ],
-        title: Text(
-          'YaadonKiBaarat',
-          style: TextStyle(color: Colors.white,
-              fontWeight: FontWeight.w900)
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.deepPurple,
-      ),
-      bottomNavigationBar: NavigationBarTheme(
-        data: NavigationBarThemeData(
-          elevation: 5,
-          labelTextStyle: MaterialStateProperty.resolveWith<TextStyle>(
-                (Set<MaterialState> states) =>
-            states.contains(MaterialState.selected)
-                ? TextStyle(color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold)
-                : TextStyle(color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold),
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topRight: Radius.circular(30),
-            topLeft: Radius.circular(30),
-          ),
-          child: NavigationBar(
-            animationDuration: Duration(milliseconds: 50),
-            selectedIndex: selectedIndex,
-            indicatorColor: Colors.white60,
-            backgroundColor: Colors.deepPurple,
-            onDestinationSelected: (newIndex) {
-              setState(() {
-                selectedIndex = newIndex;
-              });
-            },
-            destinations: [
-              NavigationItem(text: 'Home', icon: (Iconsax.home)),
-              NavigationItem(text: 'To-do', icon: (Iconsax.note)),
-              NavigationItem(text: 'My Doctor', icon: (Iconsax.health)),
-              NavigationItem(text: 'Forgot ?', icon: (Iconsax.message_question)),
-            ],
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          pages[selectedIndex],
-          // Floating Action Button
-
-          if (_isChatVisible)
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              bottom: bottomInset > 0 ? bottomInset : _chatBottomPosition,
-              right: 20,
-              child: _buildChatWindow(),
-            ),
-        ],
-      ),
-
-      //body: pages[selectedIndex],
-      extendBody: (selectedIndex == 3 || selectedIndex == 1) ? false : true,
-    );
-  }
-}
-
-class NavigationItem extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const NavigationItem({super.key, required this.text, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return NavigationDestination(
-      icon: Icon(
-        icon,
-        color: Colors.white,
-        size: 25,
-      ),
-      label: text,
     );
   }
 }

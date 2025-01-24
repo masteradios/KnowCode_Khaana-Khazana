@@ -21,7 +21,7 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
   File? _patientImage;
   String _resultMessage = '';
   final ImagePicker _picker = ImagePicker();
-
+  bool _loading=false;
    // Example user ID
 
   Future<void> _checkFaceSimilarity(String userId) async {
@@ -35,6 +35,9 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
     }
 
     try {
+      setState(() {
+        _loading=true;
+      });
       var request = http.MultipartRequest("POST", Uri.parse("$baseUrl/check_relation"));
       request.fields['userId'] = userId;
       request.files.add(
@@ -64,6 +67,9 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
         _resultMessage = "Error occurred: $e";
       });
     }
+    setState(() {
+      _loading=false;
+    });
   }
 
 
@@ -116,20 +122,11 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
   @override
   Widget build(BuildContext context) {
     final UserModel userModel = Provider.of<UserProvider>(context).userModel!;
-    return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        title: Text("Face Similarity Check",style: TextStyle(color: Colors.white),),
-        centerTitle: true,
-        backgroundColor: Colors.deepPurpleAccent,
-        elevation: 0,
-      ),
-      body: Padding(
+    return Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text(userModel.name,style: TextStyle(color: Colors.black),),
             Text(
               'Who are you looking for ?',
               style: TextStyle(
@@ -244,9 +241,19 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
                 ),
               ),
             ),
+            if (_loading)
+              Container(
+                color: Colors.black.withOpacity(0.5),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
           ],
         ),
-      ),
+
+
     );
   }
 }
