@@ -8,6 +8,8 @@ import 'dart:convert';
 
 import 'package:provider/provider.dart';
 
+import '../pages.dart';
+
 class FaceCheckPage extends StatefulWidget {
   const FaceCheckPage({super.key});
 
@@ -20,7 +22,6 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
   String _resultMessage = '';
   final ImagePicker _picker = ImagePicker();
 
-  final String baseUrl = "https://c978-2409-40c0-2e-fbc8-bd44-3c7a-326e-e90a.ngrok-free.app"; // Replace with your server URL
    // Example user ID
 
   Future<void> _checkFaceSimilarity(String userId) async {
@@ -65,46 +66,7 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
     }
   }
 
-  Future<void> _uploadImage(String userId) async {
-    if (_patientImage == null) {
-      setState(() {
-        _resultMessage = "Please select an image first.";
-      });
-      return;
-    }
 
-    try {
-      var request = http.MultipartRequest("POST", Uri.parse("$baseUrl/upload"));
-      request.fields['userId'] = userId;
-      request.fields['label'] = "example_label"; // Replace with dynamic label if needed
-      request.files.add(
-        http.MultipartFile(
-          'image',
-          _patientImage!.openRead(),
-          await _patientImage!.length(),
-          filename: _patientImage!.path.split('/').last,
-        ),
-      );
-
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        var responseBody = await response.stream.bytesToString();
-        var decodedResponse = jsonDecode(responseBody);
-        setState(() {
-          _resultMessage = decodedResponse["message"] ?? "Image uploaded successfully.";
-        });
-      } else {
-        setState(() {
-          _resultMessage = "Failed to upload image. (${response.statusCode})";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _resultMessage = "Error occurred: $e";
-      });
-    }
-  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await _picker.pickImage(source: source);

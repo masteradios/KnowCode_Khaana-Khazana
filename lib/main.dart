@@ -2,6 +2,7 @@ import 'package:alz/AddLocation.dart';
 import 'package:alz/AddReminder.dart';
 import 'package:alz/ShakeDetector.dart';
 import 'package:alz/helper/services/auth.dart';
+import 'package:alz/screens/AddRelative.dart';
 import 'package:alz/screens/PatientProfileScreen.dart';
 import 'package:alz/screens/signUpScreen.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
@@ -15,12 +16,16 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:sms_advanced/sms_advanced.dart';
 import 'package:workmanager/workmanager.dart';
+import 'games/fourthGame.dart';
+import 'games/secondGame.dart';
+import 'games/thirdGame.dart';
 import 'helper/diseases.dart';
 import 'helper/helperFunctions.dart';
 import 'providers/UserProvider.dart';
 import 'screens/AlarmScreen.dart';
 import 'screens/DeepFace.dart';
 import 'screens/DoctorVisit.dart';
+import 'screens/HomeScreen.dart';
 void playAudioAlarm() async {
   final dir = await getApplicationDocumentsDirectory();
   final customAudioPath = "${dir.path}/custom_audiololo.mp3";
@@ -161,7 +166,7 @@ class MyApp extends StatelessWidget {
                 if (firebaseUser != null) {
                   FirebaseServices().setUserModel(context, firebaseUser.uid);
                 }
-                return FaceCheckPage();
+                return HomeScreen();
               } else if (snapshot.hasError) {
                 return Scaffold(
                   body: Center(
