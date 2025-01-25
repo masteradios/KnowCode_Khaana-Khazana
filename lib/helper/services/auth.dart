@@ -6,6 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../screens/AddRelative.dart';
 
 class FirebaseServices {
   final FirebaseAuth firebaseAuth=FirebaseAuth.instance;
@@ -35,7 +38,7 @@ class FirebaseServices {
         emergencyContacts: [],
         homeLat: 0.0,
         homeLong: 0.0,
-        dateOfBirth: DateTime.now()
+        dateOfBirth: DateTime.now(),
       );
 
       // Step 3: Save the UserModel data to Firestore
@@ -47,23 +50,32 @@ class FirebaseServices {
         email: email,
         name: name,
       );
-      Navigator.of(context).push(MaterialPageRoute(builder: (context){
-        return PatientProfilePage();
-      }));
+
+      // Step 5: Save first-time user preference
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isFirstTimeUser', true);
 
       print('User signed up and data stored successfully.');
+
+      // Step 6: Use `addPostFrameCallback` for safe navigation
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+          return PatientProfilePage();
+        }));
+      });
     } on FirebaseAuthException catch (e) {
       print('Error during sign-up: ${e.message}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message!)),
       );
-
     } catch (e) {
       print('Unexpected error: $e');
     }
   }
 
-  Future<void> setPatientProfileDetails({required BuildContext context,required String relationship,required DateTime dateOfBirth,required String diseaseDiagnosed})async{
+
+
+  Future<void> setPatientProfileDetails({required BuildContext context,required String relationship,required DateTime dateOfBirth,required String diseaseDiagnosed,required double homeLat,required double homeLong})async{
     UserModel userModel = Provider.of<UserProvider>(context,listen: false).userModel!;
     await firestore.collection('users').doc(userModel.id).update({
       'relation':relationship,
@@ -71,8 +83,9 @@ class FirebaseServices {
       'diseaseDiagnosed':diseaseDiagnosed
     });
 
-    Provider.of<UserProvider>(context,listen: false).setAdditionalDetails(diseaseDiagnosed: diseaseDiagnosed, relation: relationship, phoneNumber: '', emergencyContacts: [], homeAddressLat: 0, homeAddressLong: 0, dateOfBirth: dateOfBirth);
-
+    Provider.of<UserProvider>(context,listen: false).setAdditionalDetails(diseaseDiagnosed: diseaseDiagnosed, relation: relationship, phoneNumber: '', emergencyContacts: [], homeAddressLat: homeLat, homeAddressLong:homeLong, dateOfBirth: dateOfBirth);
+    Navigator.of(context).push(MaterialPageRoute(builder: (context){
+      return AddRelativeScreen();}));
   }
   void setUserModel(BuildContext context, String uid) async {
     try {
@@ -88,6 +101,7 @@ class FirebaseServices {
         print(userDoc.toString());
         // Update the UserProvider with the new userModel
         Provider.of<UserProvider>(context, listen: false).setUserModel(userModel: userModel);
+
       }
     } catch (e) {
       print('Error fetching user data: $e');

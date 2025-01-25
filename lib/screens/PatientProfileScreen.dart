@@ -3,8 +3,10 @@ import 'package:alz/models/usermodel.dart';
 import 'package:alz/providers/UserProvider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 import '../helper/diseases.dart';
 
@@ -46,17 +48,108 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
   ];
 
   void submit()async{
-    await FirebaseServices().setPatientProfileDetails(context: context, relationship: _relationshipController.text.trim(), dateOfBirth: _selectedDate!, diseaseDiagnosed: _selectedCondition!.trim());
-    //FirebaseServices().signUpUser(email: 'abc@gmail.com', password: '123456');
-  }
+    if(_currentLat!=null&&_currentLng!=null){
 
 
+    await FirebaseServices().setPatientProfileDetails(context: context, relationship: _relationshipController.text.trim(), dateOfBirth: _selectedDate!, diseaseDiagnosed: _selectedCondition!.trim(), homeLat: _currentLat!, homeLong: _currentLng!,);
+  }}
+
+
+  double? _currentLat;
+  double? _currentLng;
+  bool _isFetchingLocation = false;
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+     // Automatically fetch location on page load
+  }
 
+  Future<void> _fetchCurrentLocation() async {
+    setState(() {
+      _isFetchingLocation = true;
+    });
+
+    // Request location permission
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Location services are disabled.")),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Location permission is denied.")),
+        );
+        setState(() {
+          _isFetchingLocation = false;
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Location permissions are permanently denied."),
+        ),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+      return;
+    }
+
+    // Fetch current position
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+      setState(() {
+        _currentLat = position.latitude;
+        _currentLng = position.longitude;
+        _isFetchingLocation = false;
+      });
+      startLocationCheck();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to fetch location: $e")),
+      );
+      setState(() {
+        _isFetchingLocation = false;
+      });
+    }
+  }
+
+  void startLocationCheck() {
+    if (_currentLat == null || _currentLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Unable to fetch current location.")),
+      );
+      return;
+    }
+
+    Workmanager().registerPeriodicTask(
+      "locationCheckTask",
+      "checkUserLocation",
+      inputData: {
+        'houseLat': _currentLat,
+        'houseLng': _currentLng,
+      },
+      frequency: const Duration(minutes: 15), // Runs every 15 minutes
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Location check started!")),
+    );
   }
 
   @override
@@ -73,8 +166,18 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text('Home Coordinates',style: TextStyle(fontSize: 18),),
 
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(onPressed: (){
+                  if(!_isFetchingLocation){
 
+                    _fetchCurrentLocation();
+                  }
+
+                }, child: (_isFetchingLocation)?CircularProgressIndicator(color: Colors.white,):Text((_currentLat!=null)?'Lat : $_currentLat , Long : $_currentLng' :'Take Current Location as Home')),
+              ),
               Text('Relationship to the Caretaker',style: TextStyle(fontSize: 18),),
               TextField(
                 controller: _relationshipController,

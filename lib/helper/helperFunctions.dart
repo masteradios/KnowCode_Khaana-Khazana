@@ -21,36 +21,6 @@ Future<bool> checkProximity(double houseLat, double houseLng) async {
   }
 }
 
-void showNotification(String title, String body) async {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
-
-  const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const InitializationSettings initializationSettings =
-  InitializationSettings(android: initializationSettingsAndroid);
-
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-
-  const AndroidNotificationDetails androidPlatformChannelSpecifics =
-  AndroidNotificationDetails(
-    'reminder_channel',
-    'Reminder Notifications',
-    importance: Importance.max,
-    priority: Priority.high,
-  );
-
-  const NotificationDetails platformChannelSpecifics =
-  NotificationDetails(android: androidPlatformChannelSpecifics);
-
-  await flutterLocalNotificationsPlugin.show(
-    0, // Notification ID
-    title,
-    body,
-    platformChannelSpecifics,
-  );
-}
 
 Future<void> showAlarmNotification(String title, String body) async {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -93,4 +63,16 @@ void scheduleNotification(String title, String body, DateTime dateTime) async{
     ),
     schedule: NotificationCalendar.fromDate(date: dateTime,allowWhileIdle: true,preciseAlarm: true),
   );
+}
+void showNotification(String title, String body){
+  AwesomeNotifications().createNotification(
+      content: NotificationContent(
+      id: 8,
+      channelKey: 'custom_sound_channel',
+      title: title,
+      category: NotificationCategory.Alarm,
+      body: body,
+      notificationLayout: NotificationLayout.Default,
+      // Custom sound file path
+  ));
 }

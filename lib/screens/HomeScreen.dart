@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:alz/providers/UserProvider.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:alz/screens/EssentialScreens.dart';
 import 'package:alz/screens/signUpScreen.dart';
@@ -17,8 +21,10 @@ import '../games/secondGame.dart';
 import '../games/thirdGame.dart';
 import '../helper/diseases.dart';
 import '../helper/helperFunctions.dart';
+import '../helper/services/getImages.dart';
 import '../pages.dart';
 import 'FloatingChatBot.dart';
+import 'GoogleMaps.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -41,15 +47,18 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isChatVisible = false;
   Offset _offset = const Offset(50, 400);
   double _chatBottomPosition = 130;
-
+  FlutterTts flutterTts = FlutterTts();
   late stt.SpeechToText _speech; // Speech-to-text instance
   bool _isListening = false; // Track listening state
   String _spokenText = ''; // Hold recognized text
   final ScrollController _scrollController = ScrollController();
+  bool _loading=false;
+
+
 
 
   Future<String> getBotResponse(String query) async {
-    final url = Uri.parse('https://71b1-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/chat');
+    final url = Uri.parse('https://fb03-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/chat');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -64,7 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _getIntent(String userMessage) {
+
+  Future<String> _getIntent(String userMessage) async {
     if (userMessage.toLowerCase().contains('1')) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => FirstGameScreen()));
       return 'Routing you to the game page 1...';
@@ -74,7 +84,30 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (userMessage.toLowerCase().contains('3')) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => QuizPage()));
       return 'Routing you to the game page 3...';
-    } else {
+    } else if (userMessage.toLowerCase().contains('living room') && userMessage.toLowerCase().contains('kitchen')) {
+      _speak("From the kitchen, walk past the dining area to reach the living room.");
+      return "From the kitchen, walk past the dining area to reach the living room.";
+    }
+    else if (userMessage.toLowerCase().contains('bathroom') && userMessage.toLowerCase().contains('bedroom')) {
+      _speak("From the bedroom, head down the hallway to reach the bathroom.");
+      return "From the bedroom, head down the hallway to reach the bathroom.";
+    }
+    else if (userMessage.toLowerCase().contains('garage') && userMessage.toLowerCase().contains('living room')) {
+      _speak("From the living room, exit through the main door to reach the garage.");
+      return "From the living room, exit through the main door to reach the garage.";
+    }
+    else if (userMessage.toLowerCase().contains('map')) {
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.best,
+      );
+      Navigator.push(context, MaterialPageRoute(builder: (context){
+        return GoogleMapPage(destinationLocation: LatLng(19.1772202,72.951037), sourceLocation: LatLng(position.latitude,position.longitude));
+      }));
+      _speak("Don't Worry Follow the Map");
+      return "Don't Worry Follow the Map";
+    }
+    else {
       return 'Sorry, this feature is not in the app.';
     }
   }
@@ -95,8 +128,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _scrollToBottom();
     }
   }
-
-
   void _startListening() async {
     bool available = await _speech.initialize(
       onStatus: (status) => print('Speech status: $status'),
@@ -137,17 +168,61 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
+
+  Future<void> checkLanguageAvailability(bool available) async {
+    if (!available) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Text-to-Speech Not Available'),
+            content: Text(
+                'Text-to-Speech functionality is not available on this device.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
+
+  void _speak(String text) async {
+    await flutterTts.setVolume(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setLanguage("en-IN");
+
+    await flutterTts.speak(text);
+  }
+
+
+
   @override
   void initState() {
     super.initState();
     _isMounted = true;
+
+    _speech = stt.SpeechToText();
     scheduleNotifications();
+    flutterTts.isLanguageAvailable("en-IN").then((available) {
+      checkLanguageAvailability(available);
+    });
     Workmanager().registerPeriodicTask('appReminder', 'showAppReminder',frequency: Duration(minutes: 30));
     ShakeDetector shakeDetector=ShakeDetector.autoStart(onPhoneShake: (){
-      showNotification("SOS Sent !!", "Your contacts have been informed!");
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Shake")));
+      sendMessage();
 
     });
   }
+
+
   void scheduleNotifications() {
     int? severity = dementiaConditions['sda'];
     dementiaConditions.forEach((condition, severity) {
@@ -176,6 +251,23 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     });
+  }
+
+  void sendMessage()async{
+    http.Response res=await http.post(Uri.parse("https://fb03-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/send-sms"),headers: {
+      'Content-Type':'application/json'
+    },body: jsonEncode({
+      "text" : "SOS !!!",
+      "lat": "19.17743810065179",
+      "long":"72.95361190322748",
+      "number":"9324309587"
+    }));
+
+    if(res.statusCode==200){
+      String reply = json.decode(res.body)["status"];
+      print('reply is '+reply);
+      showNotification("SOS Sent !!",reply );
+    }
   }
 
 
@@ -268,13 +360,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: TextFormField(
+                      onTap: (){},
                       controller: _controller,
                       decoration: const InputDecoration(
                         hintText: 'Ask about app features...',
                         border: OutlineInputBorder(),
                       ),
-                      onSubmitted: (value) => _sendMessage(value),
+                      //onSubmitted: (value) => _sendMessage(value),
                     ),
                   ),
                   IconButton(
@@ -296,7 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom-100;
+    final bottomInset = MediaQuery.of(context).viewInsets.top-1000;
     return Scaffold(
       floatingActionButton: FloatingActionButton(onPressed: (){
         setState(() {
@@ -369,10 +462,23 @@ class _HomeScreenState extends State<HomeScreen> {
           if (_isChatVisible)
             AnimatedPositioned(
               duration: const Duration(milliseconds: 300),
-              bottom: bottomInset > 0 ? bottomInset : _chatBottomPosition,
+              bottom: bottomInset > 0 ? bottomInset + 10 : _chatBottomPosition,
               right: 20,
-              child: _buildChatWindow(),
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 300,
+                  height: MediaQuery.of(context).size.height * 0.5, // Adjust height
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: _buildChatWindow(),
+                ),
+              ),
             ),
+
         ],
       ),
 

@@ -300,6 +300,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:alz/models/usermodel.dart';
 import 'package:alz/providers/UserProvider.dart';
+import 'package:alz/screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -329,7 +330,11 @@ class _AddRelativeScreenState extends State<AddRelativeScreen> {
       if (relativeWidget.state != null) {
         await relativeWidget.state!._upload(userId);
       }
+
     }
+    Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_){
+      return HomeScreen();
+    }), (route)=>false);
   }
 
   @override

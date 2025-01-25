@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:alz/AddLocation.dart';
 import 'package:alz/AddReminder.dart';
 import 'package:alz/ShakeDetector.dart';
+import 'package:http/http.dart' as http;
 import 'package:alz/helper/services/auth.dart';
+import 'package:alz/models/imageModel.dart';
 import 'package:alz/screens/AddRelative.dart';
 import 'package:alz/screens/PatientProfileScreen.dart';
 import 'package:alz/screens/signUpScreen.dart';
@@ -14,6 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sms_advanced/sms_advanced.dart';
 import 'package:workmanager/workmanager.dart';
 import 'games/fourthGame.dart';
@@ -76,7 +81,14 @@ void main() async{
 
       AwesomeNotifications().initialize(
         null, // Use the default icon
-        [
+        [NotificationChannel(
+          channelKey: 'reminder_channel',
+          channelName: 'SOS Reminders',
+          channelDescription: 'Notifications with custom sounds',
+          playSound: true,
+          // Custom sound will be defined per notification
+          importance: NotificationImportance.High,
+        ),
           NotificationChannel(
             channelKey: 'custom_sound_channel',
             channelName: 'Custom Sound Notifications',
@@ -125,15 +137,54 @@ void main() async{
 
 
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _loading=false;
+  bool isFirst=false;
+  void setFirstTimeUserFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isFirstTimeUser', false);
+    print('setFirstTimeUserFlag: isFirstTimeUser set to false');
+    setState(() {
+      isFirst = false;
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    isFirstTimeUser();
+  }
+  Future<void> isFirstTimeUser() async {
+    setState(() {
+      _loading = true;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstTime = prefs.getBool('isFirstTimeUser') ?? false;
+
+    setState(() {
+      _loading = false;
+      isFirst = isFirstTime;
+    });
+
+    print('isFirstTimeUser: isFirst = $isFirst');
+  }
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ImagesProvider()  ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -169,141 +220,52 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
         ),
 
-        home:  StreamBuilder(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            print('Connection State: ${snapshot.connectionState}');
-            print('Snapshot Data: ${snapshot.data}');
-            print('Snapshot Error: ${snapshot.error}');
+        home: (_loading)?Scaffold(body: Center(child: CircularProgressIndicator(color: Colors.white,))):
+           StreamBuilder(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        print('StreamBuilder: ConnectionState: ${snapshot.connectionState}');
+        print('StreamBuilder: isFirst = $isFirst');
 
-            if (snapshot.connectionState == ConnectionState.active) {
-              if (snapshot.hasData) {
-                final User? firebaseUser = snapshot.data;
-                print('User Logged In: ${firebaseUser?.uid}');
-                if (firebaseUser != null) {
-                  FirebaseServices().setUserModel(context, firebaseUser.uid);
-                }
+        if (snapshot.connectionState == ConnectionState.active) {
+          if (snapshot.hasData) {
+            final User? firebaseUser = snapshot.data as User?;
+            if (firebaseUser != null) {
+              if (isFirst) {
+                setFirstTimeUserFlag();
+                return PatientProfilePage();
+              } else {
+                FirebaseServices().setUserModel(context, firebaseUser.uid);
                 return HomeScreen();
-              } else if (snapshot.hasError) {
-                return Scaffold(
-                  body: Center(
-                    child: Text('${snapshot.error}'),
-                  ),
-                );
               }
             }
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Scaffold(
-                body: Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-            }
-            print('Showing SignUpScreen');
-            return SignUpScreen();
-          },
+          } else if (snapshot.hasError) {
+            return Scaffold(
+              body: Center(
+                child: Text('${snapshot.error}'),
+              ),
+            );
+          }
+        }
 
-        ),
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-      ),
+        return SignUpScreen();
+      },
+    )
+
+
+
+    ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-
-
-class _MyHomePageState extends State<MyHomePage> {
-
-  void sendMessage()async{
-    //String message = "This is a test message!";
-    List<String> recipents = ["9326699667", "5556787676"];
-    SmsSender sender=SmsSender();
-    SmsMessage message = new SmsMessage(recipents[0], 'Hello flutter world!');
-    message.onStateChanged.listen((state) {
-      if (state == SmsMessageState.Sent) {
-        print("SMS is sent!");
-      } else if (state == SmsMessageState.Delivered) {
-        print("SMS is delivered!");
-      }
-    });
-    sender.sendSms(message);
-  }
-
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    scheduleNotifications();
-    Workmanager().registerPeriodicTask('appReminder', 'showAppReminder',frequency: Duration(minutes: 30));
-    ShakeDetector shakeDetector=ShakeDetector.autoStart(onPhoneShake: (){
-      showNotification("SOS Sent !!", "Your contacts have been informed!");
-
-    });
-  }
-
-
-
-  void scheduleNotifications() {
-    int? severity = dementiaConditions['sda'];
-    dementiaConditions.forEach((condition, severity) {
-      String channelKey =
-      severity >= 8 ? 'high_frequency' : 'low_frequency'; // Frequency logic
-
-      // Notification Content
-      String message = severity >= 8
-          ? "Reminder: Use SOS and Face Recognition for emergencies."
-          : "Stay safe! Use SOS and YOLO when needed.";
-
-      int frequencyMinutes = severity >= 8 ? 10 : 30;
-
-      AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: severity,
-          channelKey: channelKey,
-          title: "Stay Prepared: Important Features for $condition",
-          body: message,
-          notificationLayout: NotificationLayout.Default,
-        ),
-        schedule: NotificationInterval(
-          interval: Duration(minutes: frequencyMinutes),// Convert minutes to seconds
-          timeZone: DateTime.now().timeZoneName,
-          preciseAlarm: true,
-        ),
-      );
-    });
-  }
-
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    return  Scaffold(
-      body: Column(
-        children: [
-          LocationCheckPage(),
-          ElevatedButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context){
-              return AddReminderPage();
-            }));
-          }, child: Text("Add a reminder")),
-          ElevatedButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context){
-              return AlarmHomePage();
-            }));
-          }, child: Text("Add a Custom Reminder"))
-        ],
-      ),
-    );
-  }
-}
 
 

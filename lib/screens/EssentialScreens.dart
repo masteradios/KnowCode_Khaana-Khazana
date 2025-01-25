@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:alz/models/usermodel.dart';
 import 'package:alz/providers/UserProvider.dart';
+import 'package:alz/screens/AddRelative.dart';
 import 'package:alz/screens/GoogleMaps.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -15,6 +17,7 @@ import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import '../games/firstGame.dart';
 import '../games/secondGame.dart';
 import '../games/thirdGame.dart';
+import '../helper/services/getImages.dart';
 import 'PersonalInfo.dart';
 import 'ShowContacts.dart';
 
@@ -33,6 +36,7 @@ class EssentialScreen extends StatefulWidget {
 class _EssentialScreenState extends State<EssentialScreen> {
   String locationMessage="";
   double? _currentLat;
+  bool _loading=false;
   double? _currentLng;
   bool _isFetchingLocation = false;
   Future<void> _fetchCurrentLocation() async {
@@ -154,6 +158,16 @@ class _EssentialScreenState extends State<EssentialScreen> {
     // TODO: implement initState
     super.initState();
     _fetchCurrentLocation();
+    fetchData();
+  }
+  void fetchData()async{
+    setState(() {
+      _loading=true;
+    });
+    await fetchDynamicImageData(FirebaseAuth.instance.currentUser!.uid,context);
+    setState(() {
+      _loading=false;
+    });
   }
 
   bool isLoading = false;
@@ -210,7 +224,7 @@ class _EssentialScreenState extends State<EssentialScreen> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       GestureDetector(
-                        onTap: () {
+                        onTap: (_loading)?null:() {
                           Navigator.push(
                               context, MaterialPageRoute(builder: (context){
                                 return FirstGameScreen();
@@ -349,7 +363,19 @@ class _EssentialScreenState extends State<EssentialScreen> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text('Relatives',style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: Colors.white),),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Relatives',style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: Colors.white),),
+                  GestureDetector(
+                      onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context){
+                          return AddRelativeScreen();
+                        }));
+                      },
+                      child: Text('Add More',style: TextStyle(fontSize: 20,color: Colors.white),))
+                ],
+              ),
             ),
             ImageListPage()
           ],
