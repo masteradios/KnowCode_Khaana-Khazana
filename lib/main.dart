@@ -1,8 +1,5 @@
-import 'dart:convert';
 
-import 'package:alz/AddLocation.dart';
-import 'package:alz/AddReminder.dart';
-import 'package:alz/ShakeDetector.dart';
+import 'package:alz/pages.dart';
 import 'package:http/http.dart' as http;
 import 'package:alz/helper/services/auth.dart';
 import 'package:alz/models/imageModel.dart';
@@ -46,10 +43,12 @@ void callbackDispatcher() {
       case 'checkUserLocation':
         double houseLat = inputData?['houseLat'] ?? 0.0;
         double houseLng = inputData?['houseLng'] ?? 0.0;
+        print("inside this");
         bool isWithin100m = await checkProximity(houseLat, houseLng);
-        if (isWithin100m) {
-          showNotification("You're near your house!", "Welcome home!");
-        }
+        // if (isWithin100m) {
+        //   print("checking for 100m");
+        //   showNotification("You're near your house!", "Welcome home!");
+        // }
         break;
 
       case 'showAppReminder':
@@ -77,7 +76,7 @@ void main() async{
     WidgetsFlutterBinding.ensureInitialized();
     await AndroidAlarmManager.initialize();
     // Initialize Workmanager
-    Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+    Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 
       AwesomeNotifications().initialize(
         null, // Use the default icon
@@ -185,6 +184,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ImagesProvider()  ),
+        ChangeNotifierProvider(create: (_) => PageProvider()  ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,

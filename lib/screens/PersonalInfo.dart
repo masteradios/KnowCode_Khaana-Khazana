@@ -53,7 +53,7 @@ class Personal_Info extends StatelessWidget {
           ),
           SizedBox(height: 5),
           Text(
-            "Address : ${user.homeLong}",
+            "Address : Ashwa platinum ",
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -61,7 +61,7 @@ class Personal_Info extends StatelessWidget {
           ),
           SizedBox(height: 5),
           Text(
-            "Phone : ${user}",
+            "Phone : 8591870313",
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -69,7 +69,7 @@ class Personal_Info extends StatelessWidget {
           ),
           SizedBox(height: 5),
           Text(
-            "Emergency Contact: Jane Doe (+1 (555) 987-6543)",
+            "Emergency Contact: Lintomon 9324309587",
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,

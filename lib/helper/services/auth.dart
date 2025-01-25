@@ -80,7 +80,9 @@ class FirebaseServices {
     await firestore.collection('users').doc(userModel.id).update({
       'relation':relationship,
       'dateOfBirth':dateOfBirth,
-      'diseaseDiagnosed':diseaseDiagnosed
+      'diseaseDiagnosed':diseaseDiagnosed,
+      'homeLat':homeLat,
+      'homeLong':homeLong
     });
 
     Provider.of<UserProvider>(context,listen: false).setAdditionalDetails(diseaseDiagnosed: diseaseDiagnosed, relation: relationship, phoneNumber: '', emergencyContacts: [], homeAddressLat: homeLat, homeAddressLong:homeLong, dateOfBirth: dateOfBirth);
@@ -99,6 +101,7 @@ class FirebaseServices {
         UserModel userModel = UserModel.fromMap(userDoc.data() as Map<String, dynamic>);
         print("user Doc is");
         print(userDoc.toString());
+        print("home Lat "+userModel.homeLat.toString());
         // Update the UserProvider with the new userModel
         Provider.of<UserProvider>(context, listen: false).setUserModel(userModel: userModel);
 

@@ -1,16 +1,6 @@
-import 'dart:convert';
-
-import 'package:alz/models/imageModel.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-class ItemModel {
-  final String? name;
-  final String? img;
-  final String? value;
-  bool accepting;
-  ItemModel({this.name, this.value, this.img, this.accepting = false});
-}
+import '../models/item_model.dart';
 
 
 class FirstGameScreen extends StatefulWidget {
@@ -33,31 +23,29 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
     gameOver = false;
     score = 0;
 
-//     List<String> imageUrls = [
-//       'https://tse2.mm.bing.net/th?id=OIP.pfDlSfWbNJTqAqHlrYsNTwHaJ4&pid=Api',
-//       'https://tse2.mm.bing.net/th?id=OIP.fb0WC-tbOMHFKSYKrzD-awHaEo&pid=Api',
-//       'https://tse3.mm.bing.net/th?id=OIP.-ziROjSkHwwowC2LKiX1jwHaJQ&pid=Api',
-//       'https://tse4.mm.bing.net/th?id=OIP.C8bPx7F_TH8RkI248aB4egHaKg&pid=Api',
-//     ];
-//
-// // List of names corresponding to the images
-//     List<String> relation = [
-//       'Famous Celebrities',
-//       'Celebrity Images',
-//       'Secrets of Stars',
-//       'Best Makeup Looks'
-//     ];
-//     List<String> imageUrls=Provider.of<ImagesProvider>(context,).imagesData.map((e)=>e.base64Image).toList();
-//     List<String> relation=Provider.of<ImagesProvider>(context,listen: false).imagesData.map((e)=>e.name).toList();
-//     print("first one is"+relation.first);
-//     // Populate the items list using a for loop
-//     for (int i = 0; i < imageUrls.length; i++) {
-//       items.add(ItemModel(value: relation[i], name: relation[i], img: imageUrls[i]));
-//     }
-//     items2 = List<ItemModel>.from(items);
-//
-//     items.shuffle();
-//     items2.shuffle();
+    List<String> imageUrls = [
+      'https://tse2.mm.bing.net/th?id=OIP.pfDlSfWbNJTqAqHlrYsNTwHaJ4&pid=Api',
+      'https://tse2.mm.bing.net/th?id=OIP.fb0WC-tbOMHFKSYKrzD-awHaEo&pid=Api',
+      'https://tse3.mm.bing.net/th?id=OIP.-ziROjSkHwwowC2LKiX1jwHaJQ&pid=Api',
+      'https://tse4.mm.bing.net/th?id=OIP.C8bPx7F_TH8RkI248aB4egHaKg&pid=Api',
+    ];
+
+// List of names corresponding to the images
+    List<String> names = [
+      'Famous Celebrities',
+      'Celebrity Images',
+      'Secrets of Stars',
+      'Best Makeup Looks'
+    ];
+
+    // Populate the items list using a for loop
+    for (int i = 0; i < imageUrls.length; i++) {
+      items.add(ItemModel(value: names[i], name: names[i], img: imageUrls[i]));
+    }
+    items2 = List<ItemModel>.from(items);
+
+    items.shuffle();
+    items2.shuffle();
   }
 
 
@@ -69,21 +57,11 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrls=Provider.of<ImagesProvider>(context).imagesData.map((e)=>e.base64Image).toList();
-    List<String> relation=Provider.of<ImagesProvider>(context).imagesData.map((e)=>e.name).toList();
-    print("first one is"+relation.first);
-    // Populate the items list using a for loop
-    for (int i = 0; i < imageUrls.length; i++) {
-      items.add(ItemModel(value: relation[i], name: relation[i], img: imageUrls[i]));
-    }
-    items2 = List<ItemModel>.from(items);
-
-    items.shuffle();
-    items2.shuffle();
     if (items.isEmpty) gameOver = true;
     return Scaffold(
       body: Container(
         height: 1000,
+        color: Colors.blue,
         child: SafeArea(
           child: SingleChildScrollView(
             child: Column(
@@ -109,7 +87,7 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                             style: Theme.of(context)
                                 .textTheme
                                 .displaySmall!
-                                .copyWith(color: Colors.deepPurple),
+                                .copyWith(color: Colors.blue),
                           ),
                         ],
                       ),
@@ -125,7 +103,6 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                       Spacer(),
                       Column(
                         children: items.map((item) {
-                          final bytes = base64Decode(item.img!);
                           return Container(
                             margin: EdgeInsets.all(8),
                             child: Draggable<ItemModel>(
@@ -133,9 +110,8 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                               childWhenDragging: Container(
                                 width: 100,
                                 height: 100,
-                                child: Image.memory(
-                                bytes ,
-                                  fit: BoxFit.cover,
+                                child: Image.network(
+                                  item.img!,
                                 ),
                                 // child: ClipOval(
                                 //   child: Image.network(
@@ -150,8 +126,8 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                                 width: 100,
                                 height: 100,
                                 child: ClipOval(
-                                  child: Image.memory(
-                                   bytes,
+                                  child: Image.network(
+                                    item.img!,
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.fill,
@@ -162,8 +138,8 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                                 width: 100,
                                 height: 100,
                                 child: ClipOval(
-                                  child: Image.memory(
-                                    bytes,
+                                  child: Image.network(
+                                    item.img!,
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.fill,
@@ -209,8 +185,8 @@ class _FirstGameScreenState extends State<FirstGameScreen> {
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
                                       color: item.accepting
-                                          ? Colors.deepPurple[900]
-                                          : Colors.deepPurple[400],
+                                          ? Colors.blue[900]
+                                          : Colors.blue[400],
                                     ),
                                     alignment: Alignment.center,
                                     height:

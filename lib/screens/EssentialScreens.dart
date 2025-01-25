@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:alz/helper/helperFunctions.dart';
+import 'package:alz/helper/services/auth.dart';
 import 'package:alz/models/usermodel.dart';
+import 'package:alz/pages.dart';
 import 'package:alz/providers/UserProvider.dart';
 import 'package:alz/screens/AddRelative.dart';
 import 'package:alz/screens/GoogleMaps.dart';
@@ -14,6 +17,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
+import 'package:workmanager/workmanager.dart';
 import '../games/firstGame.dart';
 import '../games/secondGame.dart';
 import '../games/thirdGame.dart';
@@ -39,6 +43,12 @@ class _EssentialScreenState extends State<EssentialScreen> {
   bool _loading=false;
   double? _currentLng;
   bool _isFetchingLocation = false;
+
+  void getUser()async{
+    FirebaseServices().setUserModel(context, FirebaseAuth.instance.currentUser!.uid);
+  }
+
+
   Future<void> _fetchCurrentLocation() async {
     setState(() {
       _isFetchingLocation = true;
@@ -93,8 +103,22 @@ class _EssentialScreenState extends State<EssentialScreen> {
 
       });
 
+
+      // Workmanager().registerOneOffTask(
+      //   "locationCheckTask",
+      //   "checkUserLocation",
+      //   inputData: {
+      //     'houseLat': 19.0461354,
+      //     'houseLng': 72.8710307,
+      //   }
+      // );
+
+
+
+
+      getUser();
       http.Response res = await http.post(
-        Uri.parse('https://f752-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/locate'),
+        Uri.parse('$linto/locate'),
         body: jsonEncode({
           "long": _currentLng.toString(),
           "lat": _currentLat.toString(),
@@ -158,8 +182,19 @@ class _EssentialScreenState extends State<EssentialScreen> {
     // TODO: implement initState
     super.initState();
     _fetchCurrentLocation();
+proximitySearch();
     fetchData();
   }
+
+  void proximitySearch()async{
+    bool isWithin100m = await checkProximity(19.0461354, 72.8710307);
+    if (isWithin100m) {
+      print("checking for 100m");
+      showNotification("You're near your house!", "Welcome home!");
+    }
+  }
+
+
   void fetchData()async{
     setState(() {
       _loading=true;
@@ -343,7 +378,7 @@ class _EssentialScreenState extends State<EssentialScreen> {
                                     ),
                                     onPressed: (){
                                       Navigator.push(context, MaterialPageRoute(builder: (context){
-                                        return GoogleMapPage(destinationLocation: LatLng(user.homeLat, user.homeLong), sourceLocation: LatLng(_currentLat!, _currentLng!));
+                                        return GoogleMapPage(destinationLocation: LatLng(19.177076,72.9509179), sourceLocation: LatLng(_currentLat!, _currentLng!));
                                       }));
                                 }, child: Padding(
                                   padding: const EdgeInsets.all(8.0),

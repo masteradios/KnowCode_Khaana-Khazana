@@ -15,6 +15,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:workmanager/workmanager.dart';
 
+import '../AllNotesScreen.dart';
 import '../ShakeDetector.dart';
 import '../games/firstGame.dart';
 import '../games/secondGame.dart';
@@ -24,6 +25,7 @@ import '../helper/helperFunctions.dart';
 import '../helper/services/getImages.dart';
 import '../pages.dart';
 import 'FloatingChatBot.dart';
+import 'ForgotPage.dart';
 import 'GoogleMaps.dart';
 
 
@@ -58,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   Future<String> getBotResponse(String query) async {
-    final url = Uri.parse('https://fb03-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/chat');
+    final url = Uri.parse('$linto/chat');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -107,6 +109,24 @@ class _HomeScreenState extends State<HomeScreen> {
       _speak("Don't Worry Follow the Map");
       return "Don't Worry Follow the Map";
     }
+    else if (userMessage.toLowerCase().contains('rec')) {
+setState(() {
+  _isChatVisible=false;
+});
+      Provider.of<PageProvider>(context,listen: false).setIndex(3);
+      //_speak("Don't Worry Follow the Map");
+      return "Redirecting to Recognize Page";
+    }
+    else if (userMessage.toLowerCase().contains('rem')) {
+
+
+      Navigator.push(context, MaterialPageRoute(builder: (context){
+        return NotesScreen();
+      }));
+      //_speak("Don't Worry Follow the Map");
+      return "Redirecting to Todo Page";
+    }
+
     else {
       return 'Sorry, this feature is not in the app.';
     }
@@ -203,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
-
+  bool _isDoneFirst=false;
   @override
   void initState() {
     super.initState();
@@ -217,7 +237,13 @@ class _HomeScreenState extends State<HomeScreen> {
     Workmanager().registerPeriodicTask('appReminder', 'showAppReminder',frequency: Duration(minutes: 30));
     ShakeDetector shakeDetector=ShakeDetector.autoStart(onPhoneShake: (){
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Shake")));
-      sendMessage();
+      if(!_isDoneFirst){
+        sendMessage();
+        //showNotification("SOS Sent !!", "Your emergency contacts have been informed !");
+        setState(() {
+          _isDoneFirst=true;
+        });
+      }
 
     });
   }
@@ -254,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void sendMessage()async{
-    http.Response res=await http.post(Uri.parse("https://fb03-2409-40c0-7e-776f-d435-b81c-4f9e-7cf0.ngrok-free.app/send-sms"),headers: {
+    http.Response res=await http.post(Uri.parse("$linto/send-sms"),headers: {
       'Content-Type':'application/json'
     },body: jsonEncode({
       "text" : "SOS !!!",
@@ -287,7 +313,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
-  int selectedIndex = 0;
   Widget _buildChatWindow() {
     return Material(
       elevation: 8,
@@ -314,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Padding(
                     padding: EdgeInsets.only(left: 16.0),
                     child: Text(
-                      'Chatbot',
+                      'Chatur',
                       style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -377,7 +402,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.send),
-                    onPressed: () => _sendMessage(_controller.text),
+                    onPressed: () {
+                      //_sendMessage(_controller.text);
+                    },
                   ),
                 ],
               ),
@@ -390,6 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.top-1000;
+    int selectedIndex = Provider.of<PageProvider>(context).index;
     return Scaffold(
       floatingActionButton: FloatingActionButton(onPressed: (){
         setState(() {
@@ -441,9 +469,7 @@ class _HomeScreenState extends State<HomeScreen> {
             indicatorColor: Colors.white60,
             backgroundColor: Colors.deepPurple,
             onDestinationSelected: (newIndex) {
-              setState(() {
-                selectedIndex = newIndex;
-              });
+              Provider.of<PageProvider>(context,listen: false).setIndex(newIndex);
             },
             destinations: [
               NavigationItem(text: 'Home', icon: (Iconsax.home)),

@@ -65,9 +65,10 @@ void scheduleNotification(String title, String body, DateTime dateTime) async{
   );
 }
 void showNotification(String title, String body){
+
   AwesomeNotifications().createNotification(
       content: NotificationContent(
-      id: 8,
+      id: 12,
       channelKey: 'custom_sound_channel',
       title: title,
       category: NotificationCategory.Alarm,

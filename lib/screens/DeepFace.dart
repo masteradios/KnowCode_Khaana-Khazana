@@ -122,7 +122,16 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
   @override
   Widget build(BuildContext context) {
     final UserModel userModel = Provider.of<UserProvider>(context).userModel!;
-    return Padding(
+    return(_loading)?
+      Container(
+        color: Colors.black.withOpacity(0.5),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      ):
+      Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -241,15 +250,7 @@ class _FaceCheckPageState extends State<FaceCheckPage> {
                 ),
               ),
             ),
-            if (_loading)
-              Container(
-                color: Colors.black.withOpacity(0.5),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+
           ],
         ),
 

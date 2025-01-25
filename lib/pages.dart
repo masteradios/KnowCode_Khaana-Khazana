@@ -6,8 +6,8 @@ import 'AllNotesScreen.dart';
 import 'screens/AllDoctorAppointments.dart';
 import 'screens/EssentialScreens.dart';
 import 'screens/ShowContacts.dart';
-final String baseUrl = "https://ea3f-2409-40c0-7e-776f-1d7f-27a6-1588-4236.ngrok-free.app"; // Replace with your server URL
-
+final String baseUrl = "https://dec1-128-185-183-42.ngrok-free.app"; // Replace with your server URL
+final String linto=baseUrl;
 List<Widget> pages = [
   EssentialScreen(),
   NotesScreen(),
@@ -15,3 +15,18 @@ List<Widget> pages = [
   ForgotPage(),
 
 ];
+
+
+class PageProvider extends ChangeNotifier{
+
+  int _index=0;
+  int get index=>_index;
+
+  void setIndex(int newIndex){
+
+    print("Index updated: $newIndex");
+    _index=newIndex;
+    notifyListeners();
+  }
+
+}

@@ -137,19 +137,6 @@ class _PatientProfilePageState extends State<PatientProfilePage> {
       return;
     }
 
-    Workmanager().registerPeriodicTask(
-      "locationCheckTask",
-      "checkUserLocation",
-      inputData: {
-        'houseLat': _currentLat,
-        'houseLng': _currentLng,
-      },
-      frequency: const Duration(minutes: 15), // Runs every 15 minutes
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Location check started!")),
-    );
   }
 
   @override
