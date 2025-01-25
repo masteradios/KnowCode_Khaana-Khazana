@@ -1,4 +1,5 @@
 
+import 'package:alarm/alarm.dart';
 import 'package:alz/pages.dart';
 import 'package:http/http.dart' as http;
 import 'package:alz/helper/services/auth.dart';
@@ -24,6 +25,7 @@ import 'games/thirdGame.dart';
 import 'helper/diseases.dart';
 import 'helper/helperFunctions.dart';
 import 'providers/UserProvider.dart';
+import 'screens/AddAlarmScreen.dart';
 import 'screens/AlarmScreen.dart';
 import 'screens/DeepFace.dart';
 import 'screens/DoctorVisit.dart';
@@ -75,6 +77,7 @@ void main() async{
 
     WidgetsFlutterBinding.ensureInitialized();
     await AndroidAlarmManager.initialize();
+    await Alarm.init();
     // Initialize Workmanager
     Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 

@@ -474,6 +474,7 @@ setState(() {
             destinations: [
               NavigationItem(text: 'Home', icon: (Iconsax.home)),
               NavigationItem(text: 'To-do', icon: (Iconsax.note)),
+              NavigationItem(text: 'Reminders', icon: (Iconsax.alarm)),
               NavigationItem(text: 'My Doctor', icon: (Iconsax.health)),
               NavigationItem(text: 'Forgot ?', icon: (Iconsax.message_question)),
             ],

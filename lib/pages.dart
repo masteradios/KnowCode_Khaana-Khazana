@@ -1,3 +1,4 @@
+import 'package:alz/screens/AddAlarmScreen.dart';
 import 'package:alz/screens/DoctorVisit.dart';
 import 'package:alz/screens/ForgotPage.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ final String linto=baseUrl;
 List<Widget> pages = [
   EssentialScreen(),
   NotesScreen(),
+  AlarmListScreen(),
   DoctorVisitDetailsPage(),
   ForgotPage(),
 
